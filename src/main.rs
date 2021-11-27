@@ -1,3 +1,9 @@
+use std::array;
+mod inputs;
+use crate::inputs::ForecastParameter;
+
+
+
 
 // Decline conversion functions
 
@@ -17,179 +23,58 @@ pub fn nominal_to_tangent_effective(decline_rate: f32) -> f32 {
     1.0 - (-decline_rate).exp()
 }
 
-//Next steps: 
-//Write out process of solving for one unknown for Exponential decline equations
+// Write a function to check which values are unknown
 
-#[derive(Debug,Copy,Clone)]
-pub enum ForecastParameter<T> {
-    Known(T),
-    Unknown,
-}
+fn check_unknowns(mut arr: [ForecastParameter<f32>;5]) -> [i32;5] {
 
-// #[derive(Debug)]
-// pub struct Exponential {
-//         initial_rate: ForecastParameter<f32>,
-//         final_rate: ForecastParameter<f32>,
-//         decline_rate: ForecastParameter<f32>,
-//         incremental_duration: ForecastParameter<f32>,
-//         incremental_reserves: ForecastParameter<f32>,  
+    let mut knowns: [i32;5] = [0;5];
+    
 
-//     }
+    for (i, parameter) in arr.iter().enumerate() {
+        
+        
+        match parameter {
+            ForecastParameter::Known(T) => continue,
+            ForecastParameter::Unknown =>  knowns[i] = 1
+            }
+        }
 
-
+        return knowns
+    }
 
 
 
 
 fn main() {
 
+    let mut inputs_check:bool = false;
 
-//Prepopulate an array to hold the parameters
+    //Prepopulate an array to hold the parameters
 
-let mut parameters: [ForecastParameter<f32>;5] = [ForecastParameter::Unknown; 5];
+    let mut parameters: [ForecastParameter<f32>;5] = [ForecastParameter::Unknown; 5];
 
-//Handing User Input
-
-//Initial Rate
-let mut line = String::new();
-println!("Enter initial rate (mcf/d or bbl/d):");
-
-let b1 = std::io::stdin().read_line(&mut line).unwrap();
-
-let initial_rate = if line.trim().is_empty() {
-    ForecastParameter::Unknown
-} else {
-    // parse the values
-    let x: f32 = line.trim().parse().unwrap();
-    ForecastParameter::Known(x)
-};
-
-println!("Initial rate is {:?}",initial_rate);
-
-parameters[0] = initial_rate;
-
-//Final Rate
-let mut line = String::new();
-println!("Enter final rate (mcf/d or bbl/d):");
-
-let b1 = std::io::stdin().read_line(&mut line).unwrap();
-
-let final_rate = if line.trim().is_empty() {
-    ForecastParameter::Unknown
-} else {
-    // parse the values
-    let x: f32 = line.trim().parse().unwrap();
-    ForecastParameter::Known(x)
-};
-
-println!("Final rate is {:?}",final_rate);
-
-parameters[1] = final_rate;
-
-//Decline Rate
-let mut line = String::new();
-println!("Enter decline rate (fraction/year):");
-
-let b1 = std::io::stdin().read_line(&mut line).unwrap();
-
-let decline_rate = if line.trim().is_empty() {
-    ForecastParameter::Unknown
-} else {
-    // parse the values
-    let x: f32 = line.trim().parse().unwrap();
-    ForecastParameter::Known(x)
-};
-
-println!("Decline rate is {:?}",decline_rate);
-
-parameters[2] = decline_rate;
-
-//Incremental Duration
-let mut line = String::new();
-println!("Enter duration (years):");
-
-let b1 = std::io::stdin().read_line(&mut line).unwrap();
-
-let decline_rate = if line.trim().is_empty() {
-    ForecastParameter::Unknown
-} else {
-    // parse the values
-    let x: f32 = line.trim().parse().unwrap();
-    ForecastParameter::Known(x)
-};
-
-println!("Decline rate is {:?}",decline_rate);
-
-parameters[2] = decline_rate;
-
-// Prepopulate data for the time being
-
-// let initial_rate:ForecastParameter<f32> = ForecastParameter::Known(1000.0);
-// let final_rate:ForecastParameter<f32> = ForecastParameter::Unknown;
-// let decline_rate:ForecastParameter<f32> = ForecastParameter::Known(0.30);
-// let incremental_duration:ForecastParameter<f32> = ForecastParameter::Unknown;
-// let incremental_reserves:ForecastParameter<f32> = ForecastParameter::Known(1000.0);
+    //Handing User Input
+    while inputs_check == false {
+    let parameters = inputs::input_initial_rate(parameters);
+    let parameters = inputs::input_final_rate(parameters);
+    let parameters = inputs::input_decline_rate(parameters);
+    let parameters = inputs::input_duration(parameters);
+    let parameters = inputs::input_reserves(parameters);
 
 
+    println!("{:?}",parameters);
 
+    //Check if unknowns > 2
 
+    let unknowns_sum: i32 = check_unknowns(parameters).iter().sum();
 
-// // Pushing values onto the array
+    if unknowns_sum < 2 {
+        println!("Not enough unknowns.")
+    } else if unknowns_sum > 2 {
+        println!("Too many unknowns.")
+    } else {
+        inputs_check = true;
+    }
 
-// parameters[0] = initial_rate;
-// parameters[1] = final_rate;
-// parameters[2] = decline_rate;
-// parameters[3] = incremental_duration;
-// parameters[4] = incremental_reserves;
-
-// println!("{:?}",parameters);
-
-// // Creating "result" array of Knowns/Unknowns
-
-// let mut knowns: [bool;5] = [false; 5];
-
-// // Loop through parameters, determine knowns and unknowns
-// for (i,parameter) in parameters.iter().enumerate() {
-//     match parameter {
-//         ForecastParameter::Known(T) => knowns[i] = true,
-//         ForecastParameter::Unknown => knowns[i] = false,
-//     }
-// }
-
-// println!("{:?}",knowns);
-// // Check if number of unknowns > 2 --> return error message
-
-
-// // match knowns/unknowns to determine functions to use
-// match knowns {
-// // Unknown initial_rate and final_rate
-// [false, false, true, true, true] => {
-//     parameters[0] = ForecastParameter::Known(100f32 / 3f32);
-// }
-// // Unknown initial_rate and decline_rate
-// [false, true, false, true, true] => ,
-// // Unknown initial_rate and incremental_duration
-// [false, true, true, false, true] => ,
-// // Unknown initial_rate and incremental_reserves
-// [false, true, true, true, false] => ,
-// // Unknown final_rate and decline_rate
-// [true, false, false, true, true] => ,
-// // Unknown final_rate and incremental_duration
-// [true, false, true, false, true] => ,
-// // Unknown final_rate and incremental_reserves
-// [true, false, true, true, false] => ,
-// // Unknown decline_rate and incremental_duration
-// [true, true, false, false, true] => ,
-// // Unknown decline_rate and incremental_reserves
-// [true, true, false, true false] => ,
-// // Unknown incremental_duration and incremental_reserves
-// [true, true, true, false, false] => ,
-// }
+    }
 }
-
-
-
-// //Check array for missing values
-
-
-// //Return knowns an unknowns
