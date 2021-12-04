@@ -6,6 +6,33 @@ pub enum ForecastParameter<T> {
     Unknown,
 }
 
+pub fn array_floats(arr: &[ForecastParameter<f32>;5]) -> [f32;5] {
+
+    let mut array_floats:[f32;5] = [0.0;5];
+    
+
+    for (i,value) in arr.iter().enumerate() {
+        match value {
+            ForecastParameter::Known(x) => array_floats[i] = *x,
+            ForecastParameter::Unknown => array_floats[i] = 0.0
+        }
+         
+        }
+        return array_floats;
+    }
+
+pub fn input_manager() ->  [ForecastParameter<f32>;5] {
+
+    let mut arr:[ForecastParameter<f32>;5] = [ForecastParameter::Unknown;5];
+
+    let arr = input_initial_rate(arr);
+    let arr = input_final_rate(arr);
+    let arr = input_decline_rate(arr);
+    let arr = input_duration(arr);
+    let arr = input_reserves(arr);
+
+    return arr;
+}
 
 //Initial Rate
     pub fn input_initial_rate(mut arr: [ForecastParameter<f32>;5]) -> [ForecastParameter<f32>;5] {
@@ -97,3 +124,23 @@ pub enum ForecastParameter<T> {
             arr[4] = incremental_reserves;
             return arr
             }
+
+// Write a function to check which values are unknown
+
+pub fn check_unknowns(arr: &[ForecastParameter<f32>;5]) -> [i32;5] {
+
+    let mut knowns: [i32;5] = [0;5];
+    
+
+    for (i, parameter) in arr.iter().enumerate() {
+        // println!("check array");
+        // println!("{:?}",arr);
+        match parameter {
+            ForecastParameter::Known(f32) => knowns[i] = 0,
+            ForecastParameter::Unknown =>  knowns[i] = 1
+            }
+        }
+
+        return knowns
+    }
+
