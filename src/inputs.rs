@@ -6,20 +6,14 @@ pub enum ForecastParameter<T> {
     Unknown,
 }
 
-pub fn array_floats(arr: &[ForecastParameter<f32>;5]) -> [f32;5] {
-
-    let mut array_floats:[f32;5] = [0.0;5];
-    
-
-    for (i,value) in arr.iter().enumerate() {
-        match value {
-            ForecastParameter::Known(x) => array_floats[i] = *x,
-            ForecastParameter::Unknown => array_floats[i] = 0.0
+impl ForecastParameter<f32> {
+    pub fn extract_value(&self) -> f32 {
+        match *self {
+            ForecastParameter::Known(x) => x,
+            Unknown => panic!(),
         }
-         
-        }
-        return array_floats;
     }
+}
 
 pub fn input_manager() ->  [ForecastParameter<f32>;5] {
 

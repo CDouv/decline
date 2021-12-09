@@ -13,11 +13,17 @@ use crate::inputs::input_manager;
 
 fn main() {
 
+
     let mut inputs_check:bool = false;
+    let mut inputs = [ForecastParameter::Unknown;5];
+    let mut unknowns = [0;5];
+
+    while !inputs_check  {
+
 
 
     //Handing User Input
-    let inputs = input_manager();
+    inputs = input_manager();
 
 
     println!("{:?}",inputs);
@@ -26,24 +32,19 @@ fn main() {
     //Having trouble figuring out how to correctly use While loops in Rust.. Ideally,
     //the input manager would loop each time unknowns != 2
 
-    let unknowns = inputs::check_unknowns(&inputs);
+    unknowns = inputs::check_unknowns(&inputs);
 
     let unknowns_sum: i32 = unknowns.iter().sum();
 
-    if unknowns_sum < 2 {
-        println!("Not enough unknowns.");
-        panic!();
-    } else if unknowns_sum > 2 {
-        println!("Too many unknowns.");
-        panic!();
-    } 
+    if unknowns_sum == 2 {
+        inputs_check = true;
+    }
     
-let floats = inputs::array_floats(&inputs);
+    println!("There are {} knowns and {} unknowns. Please enter 3 knowns and 2 unknowns",
+            5-unknowns_sum,unknowns_sum);
 
-println!("{:?}",floats);
-   
-
-
+    
+}
     // We now know that the array has exactly 2 unknowns and 3 knowns
     //There's probably a better way of doing this, but going to match all 10 possible scenarios for now
     let outputs = match unknowns {
