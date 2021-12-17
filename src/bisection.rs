@@ -23,6 +23,32 @@ fn bisection(bounds:(f32,f32), f:&dyn Fn(f32) -> f32) -> f32 {
     c = (a-b)/2;
 }
 
-
+c;
 
 }
+
+
+     //Scenario 1 -Missing initial_rate and final_rate
+    
+     //bisection:  qi - (-Np*D+qi)*exp(D*t) = 0
+    
+
+     // Scenario 2 -Missing initial_rate and decline_rate
+     //bisection - Np*D - qf*exp(D*t) + qf = 0
+ 
+     // //Scenario 3 - Missing initial_rate and duration
+
+     // //Scenario 4 - Missing initial_rate and reserves
+
+     // //Scenario 5 - Missing final_rate and decline_rate
+
+     // //Scenario 6 - Missing final_rate and duration
+ 
+     // //Scenario 7 - Missing final_rate and reserves
+
+     // //Scenario 8 - Missing decline_rate and duration
+
+     // //Scenario 9 - issing decline_rate and reserves
+
+     // //Scenario 10 - Missing duration and reserves
+ 
