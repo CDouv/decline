@@ -178,7 +178,8 @@ impl Exponential<f32> {
             let qf = exponential.qf.extract_value();
             let duration = exponential.duration.extract_value();
             let reserves = exponential.reserves.extract_value();
-
+            
+            //setting equation = 0 with decline as the only unknown
             let result = d_guess * reserves - qf*E.powf(d_guess*duration) + qf;
 
             result;

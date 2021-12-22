@@ -1,9 +1,11 @@
 use std::array;
 mod inputs;
+mod bisection;
 mod decline_calc;
 use crate::inputs::ForecastParameter;
 use crate::inputs::Exponential;
-
+use crate::bisection::bisection;
+use crate::inputs::missing_qi_d;
 
 
 
@@ -45,6 +47,22 @@ fn main() {
      
      println!("\nThere are {} knowns and {} unknowns. Please enter 3 knowns and 2 unknowns",
             5-unknowns_sum,unknowns_sum);
+
+    
+
+    //Rooting finding control flow
+
+    //1. Identify unknowns
+
+    //2. Use unknows to match to correct functions to be used
+
+    //Example: Missing Qi & D
+
+    //3. Use bisection to solve for D
+
+    let d = bisection(&mut decline_curve,(0.01,1.00),&missing_qi_d);
+
+    //4. Use solve_qi to solve to qi using D result from bisection
 
 }
 
