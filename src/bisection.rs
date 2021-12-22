@@ -1,4 +1,6 @@
-fn bisection(bounds:(f32,f32), f:&dyn Fn(f32) -> f32) -> f32 {
+
+
+fn bisection(exponential: &mut Exponential<f32>,bounds:(f32,f32), f:&dyn Fn(f32) -> f32) -> f32 {
     let mut a = bounds[0];
     let mut b = bounds[1];
 
