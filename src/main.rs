@@ -1,11 +1,10 @@
 use std::array;
 mod inputs;
 mod bisection;
-mod decline_calc;
 use crate::inputs::ForecastParameter;
 use crate::inputs::Exponential;
-use crate::bisection::bisection;
-use crate::inputs::missing_qi_d;
+
+
 
 
 
@@ -60,8 +59,11 @@ fn main() {
 
     //3. Use bisection to solve for D
 
-    let d = bisection(&mut decline_curve,(0.01,1.00),&missing_qi_d);
 
+    let e = decline_curve.bisection((0.1,1.0));
+    
+    println!("{}",e);
+    
     //4. Use solve_qi to solve to qi using D result from bisection
 
 }

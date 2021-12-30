@@ -173,20 +173,20 @@ impl Exponential<f32> {
 
     }
 //Substitutation equations used for bisection
-
-        pub fn missing_qi_d(exponential: &mut Exponential<f32>,d_guess:f32) {
-            let qf = exponential.qf.extract_value();
-            let duration = exponential.duration.extract_value();
-            let reserves = exponential.reserves.extract_value();
+impl Exponential<f32> {
+        pub fn missing_qi_d(&self,d_guess:f32) -> f32 {
+            let qf = &self.qf.extract_value();
+            let duration = &self.duration.extract_value();
+            let reserves = &self.reserves.extract_value();
             
             //setting equation = 0 with decline as the only unknown
             let result = d_guess * reserves - qf*E.powf(d_guess*duration) + qf;
 
-            result;
+            result
         }
 
 
-
+    }
 
 
 
