@@ -20,12 +20,13 @@ impl ForecastParameter<f32> {
 }
 
 
+#[derive(Debug,Copy,Clone)]
 pub struct Exponential<f32> {
-    qi: ForecastParameter<f32>,
-    qf: ForecastParameter<f32>,
-    d:ForecastParameter<f32>,
-    duration: ForecastParameter<f32>,
-    reserves:ForecastParameter<f32>,
+    pub qi: ForecastParameter<f32>,
+    pub qf: ForecastParameter<f32>,
+    pub d:ForecastParameter<f32>,
+    pub duration: ForecastParameter<f32>,
+    pub reserves:ForecastParameter<f32>,
 
 }
 
@@ -112,66 +113,70 @@ impl Exponential<f32> {
 
 //Solving for single variable equations
 
-
+impl Exponential<f32> {
     //Solve for qi
-    pub fn solve_qi(exponential: &mut Exponential<f32>) {
+    pub fn solve_qi(mut self) -> Self {
 
-        let qf = exponential.qf.extract_value();
-        let d = exponential.d.extract_value();
-        let duration = exponential.duration.extract_value();
+        let qf = self.qf.extract_value();
+        let d = self.d.extract_value();
+        let duration = self.duration.extract_value();
 
 
         let qi = qf*E.powf(d*duration);
 
-        exponential.qi = ForecastParameter::Known(qi);
+        self.qi = ForecastParameter::Known(qi);
+
+        self
 
 }
 
     //Solve for qf
-    pub fn solve_qf(exponential: &mut Exponential<f32>) {
+    pub fn solve_qf(mut self: &mut Exponential<f32>) {
 
-        let qi = exponential.qi.extract_value();
-        let d = exponential.d.extract_value();
-        let duration = exponential.duration.extract_value();
+        let qi = self.qi.extract_value();
+        let d = self.d.extract_value();
+        let duration = self.duration.extract_value();
 
         let qf = qi/(E.powf(d*duration));
 
-        exponential.qf = ForecastParameter::Known(qf);
+        self.qf = ForecastParameter::Known(qf);
     }
 
     //Solve for decline rate
-    pub fn solve_decline(exponential: &mut Exponential<f32>) {
+    pub fn solve_decline(mut self: &mut Exponential<f32>) {
 
-        let qi = exponential.qi.extract_value();
-        let qf = exponential.qf.extract_value();
-        let duration = exponential.duration.extract_value();
+        let qi = self.qi.extract_value();
+        let qf = self.qf.extract_value();
+        let duration = self.duration.extract_value();
 
         let d = -((qf/qi).ln()/duration);
-        exponential.d = ForecastParameter::Known(d);
+        self.d = ForecastParameter::Known(d);
     }
 
     //Solve for duration
-    pub fn solve_duration(exponential: &mut Exponential<f32>) {
+    pub fn solve_duration(mut self: &mut Exponential<f32>) {
 
-        let qi = exponential.qi.extract_value();
-        let qf = exponential.qf.extract_value();
-        let d = exponential.d.extract_value();
+        let qi = self.qi.extract_value();
+        let qf = self.qf.extract_value();
+        let d = self.d.extract_value();
 
         let duration = -((qf/qi).ln()/d);
-        exponential.duration = ForecastParameter::Known(duration);
+        self.duration = ForecastParameter::Known(duration);
     }
 
     //Solve for reserves
-    pub fn solve_reserves(exponential: &mut Exponential<f32>) {
+    pub fn solve_reserves(mut self: &mut Exponential<f32>) {
 
-        let qi = exponential.qi.extract_value();
-        let qf = exponential.qf.extract_value();
-        let d = exponential.d.extract_value();
+        let qi = self.qi.extract_value();
+        let qf = self.qf.extract_value();
+        let d = self.d.extract_value();
 
         let reserves = (qi-qf)/d;
-        exponential.reserves = ForecastParameter::Known(reserves);
+        self.reserves = ForecastParameter::Known(reserves);
 
     }
+
+}
 //Substitutation equations used for bisection
 impl Exponential<f32> {
         pub fn missing_qi_d(&self,d_guess:f32) -> f32 {
@@ -180,7 +185,7 @@ impl Exponential<f32> {
             let reserves = &self.reserves.extract_value();
             
             //setting equation = 0 with decline as the only unknown
-            let result = d_guess * reserves - qf*E.powf(d_guess*duration) + qf;
+            let result = d_guess * reserves*1000.0 - qf*E.powf(d_guess*duration)*365.0 + qf*365.0;
 
             result
         }

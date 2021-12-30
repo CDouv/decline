@@ -4,7 +4,7 @@ mod bisection;
 use crate::inputs::ForecastParameter;
 use crate::inputs::Exponential;
 
-
+use std::{thread, time};
 
 
 
@@ -28,7 +28,7 @@ fn main() {
 
 
     //Handing User Input
-    let decline_curve = Exponential::new();
+    let mut decline_curve = Exponential::new();
     
     decline_curve.print_parameters();
 
@@ -60,12 +60,23 @@ fn main() {
     //3. Use bisection to solve for D
 
 
-    let e = decline_curve.bisection((0.1,1.0));
+    let d = decline_curve.bisection((0.01,1.0));
+    decline_curve.d = ForecastParameter::Known(d);
+
     
-    println!("{}",e);
+
+    
     
     //4. Use solve_qi to solve to qi using D result from bisection
+    decline_curve = decline_curve.solve_qi();
 
+    // let ten_seconds = time::Duration::from_secs(10);
+
+    // thread::sleep(ten_seconds);
+
+
+
+    decline_curve.print_parameters();
 }
 
     

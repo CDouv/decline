@@ -11,26 +11,58 @@ pub fn bisection(&self,
 
     let mut a = bounds.0;
     let mut b = bounds.1;
+    
 
-    let mut c:f32 = ((a-b)/2.0).abs();
 
-    while (f(self,a)/f(self,c)) > 0.05 && (f(self,b)/f(self,c)) > 0.05 {
+    let mut c:f32 = ((a+b)/2.0).abs();
+    let mut iteration = 1;
 
-    match (f(self,a)*f(self,c)<0.0,f(self,b)*f(self,c)<0.0) {
-        (true,true) => 
-            match (f(self,a) - f(self,c)) < (f(self,b)-f(self,c)) {
-                true => 
-                    b = c,
-                false =>
-                    a = c,
-                    }
+    while ((f(self,a) -f(self,c)) / f(self,a)).abs() > 0.05 && 
+    ((f(self,b) -f(self,c)) / f(self,b)).abs() > 0.05 {
+
+        println!("Start of iteration # {}",iteration);
+        println!("\na {}\n b {} \n c {}",a,b,c);
+        let mut res_a = f(self,a);
+        let mut res_b = f(self,b);
+        let mut res_c = f(self,c);
+     
+        println!("\nf(a) {}\n f(b) {} \n f(c) {}",res_a,res_b,res_c);
+        println!("\n\n");
+
+        match (f(self,a)*f(self,c)<0.0,f(self,b)*f(self,c)<0.0) {
+            (true,true) => 
+                match (f(self,a) - f(self,c)) < (f(self,b)-f(self,c)) {
+                    true => 
+                        b = c,
+                    false =>
+                        a = c,
+                        }
             
-        (false,true) => println!("door number 1"),
-        (true,false) => println!("door number 2"),
-        (false,false) => panic!("\na {}\n b {} \n c {}",a,b,c)
-    }
+            //root is between b and c (a becomes c)
+            (false,true) =>
+                a = c,
 
-    c = (a-b)/2.0;
+            // root is between a and c (b becomes c)
+            (true,false) =>
+                b = c,
+
+            (false,false) => panic!("\na {}\n b {} \n c {}",a,b,c)
+        }   
+
+    
+    c = ((a+b)/2.0).abs();
+
+    //DEBUG test code
+    // println!("End of iteration # {}",iteration);
+    // println!("\na {}\n b {} \n c {}",a,b,c);
+    // let mut res_a = f(self,a);
+    // let mut res_b = f(self,b);
+    // let mut res_c = f(self,c);
+ 
+    // println!("\nf(a) {}\n f(b) {} \n f(c) {}",res_a,res_b,res_c);
+    // println!("\n\n");
+
+    iteration +=1;
 }
 
 c
