@@ -6,12 +6,6 @@ use crate::inputs::Exponential;
 
 use std::{thread, time};
 
-
-
-
-
-
-
 fn main() {
 
 
@@ -43,11 +37,13 @@ fn main() {
      if unknowns_sum == 2 {
         inputs_check = true;
      }
+
+     else {
      
      println!("\nThere are {} knowns and {} unknowns. Please enter 3 knowns and 2 unknowns",
             5-unknowns_sum,unknowns_sum);
 
-    
+     }
 
     //Rooting finding control flow
 
@@ -60,19 +56,9 @@ fn main() {
     //3. Use bisection to solve for D
 
 
-    let d = decline_curve.bisection((0.01,1.0));
-    decline_curve.d = ForecastParameter::Known(d);
+    decline_curve = decline_curve.solve_unknowns();
 
-    
-
-    
-    
-    //4. Use solve_qi to solve to qi using D result from bisection
-    decline_curve = decline_curve.solve_qi();
-
-    // let ten_seconds = time::Duration::from_secs(10);
-
-    // thread::sleep(ten_seconds);
+  
 
 
 
