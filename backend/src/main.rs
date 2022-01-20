@@ -3,12 +3,15 @@
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate rocket_cors;
+extern crate serde;
 
 use std::io;
 use std::path::{Path, PathBuf};
 
 use rocket::http::Method;
 use serde::Deserialize;
+use serde_json::Result as JsonResult;
+use serde_json::Value;
 
 use rocket_contrib::json::Json;
 use rocket_contrib::serve::StaticFiles;
@@ -56,10 +59,17 @@ struct ExponentialInput {
 }
 
 #[post("/solve", format = "json", data = "<user_input>")]
-fn solve(user_input: Json<ExponentialInput>) -> String {
-    let s = format!("testing {:?}", user_input);
-    println!("{:?}", s);
-    s
+fn solve(user_input: Json<ExponentialInput>) -> JsonResult<()> {
+    println!(
+        "Decline parameters: \n text:{}, symbol:{}, units:{}, calculate:{}, input:{:?}",
+        user_input.text,
+        user_input.symbol,
+        user_input.units,
+        user_input.calculate,
+        user_input.input
+    );
+
+    Ok(())
 }
 
 #[get("/<file..>")]
