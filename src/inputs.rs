@@ -5,11 +5,12 @@ use serde_json::from_value;
 
 pub const E: f32 = 2.71828;
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug,Copy,Clone,Deserialize)]
 pub enum ForecastParameter<T> {
     Known(T),
     Unknown,
 }
+
 
 impl ForecastParameter<f32> {
     pub fn extract_value(&self) -> f32 {
@@ -21,7 +22,7 @@ impl ForecastParameter<f32> {
 }
 
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug,Copy,Clone,Deserialize)]
 pub struct Exponential<f32> {
     pub qi: ForecastParameter<f32>,
     pub qf: ForecastParameter<f32>,
