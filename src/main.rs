@@ -1,98 +1,118 @@
-use std::array;
-mod inputs;
-mod bisection;
-use crate::inputs::ForecastParameter;
+#![feature(proc_macro_hygiene, decl_macro)]
+#[macro_use]
+extern crate rocket;
+extern crate rocket_contrib;
+extern crate rocket_cors;
+extern crate serde;
+pub mod inputs;
+
+use std::io;
+use std::path::{Path, PathBuf};
+
+use rocket::http::Method;
+use rocket::Data;
+
+use serde::Deserialize;
+use serde_json::Result as JsonResult;
+use serde_json::{Deserializer, Value};
+
+use rocket_contrib::json::Json;
+use rocket_contrib::serve::StaticFiles;
+
+use rocket::response::NamedFile;
+
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions, Error};
+
 use crate::inputs::Exponential;
+use crate::inputs::ForecastParameter;
 
-use std::{thread, time};
+//Setting up CORS
+fn make_cors() -> Cors {
+    let allowed_origins = AllowedOrigins::some_exact(&[
+        "http://localhost:3000/",
+        "http://172.22.112.1:3000/",
+        "http://localhost:8000/",
+        "http://0.0.0.0:8000/",
+    ]);
 
-fn main() {
+    CorsOptions {
+        allowed_origins,
+        allowed_methods: vec![Method::Get, Method::Post]
+            .into_iter()
+            .map(From::from)
+            .collect(),
 
-
-    // let mut inputs_check:bool = false;
-    // let mut inputs = [ForecastParameter::Unknown;5];
-    // let mut unknowns = [0;5];
-
-  //TODO need to add back in while loop and get around instantiating the struct before the loop
-
-
-    let mut inputs_check:bool = false;
-    let mut unknowns = [0;5];
-
-
-
-    //Handing User Input
-    let mut decline_curve = Exponential::new();
-    
-    decline_curve.print_parameters();
-
-
-
-//     //Check if unknowns == 2
-
-     unknowns = decline_curve.check_unknowns();
-
-     let unknowns_sum: i32 = unknowns.iter().sum();
-
-     if unknowns_sum == 2 {
-        inputs_check = true;
-     }
-
-     else {
-     
-     println!("\nThere are {} knowns and {} unknowns. Please enter 3 knowns and 2 unknowns",
-            5-unknowns_sum,unknowns_sum);
-
-     }
-
-    //Rooting finding control flow
-
-    //1. Identify unknowns
-
-    //2. Use unknows to match to correct functions to be used
-
-    //Example: Missing Qi & D
-
-    //3. Use bisection to solve for D
-
-
-    decline_curve = decline_curve.solve_unknowns();
-
-  
-
-
-
-    decline_curve.print_parameters();
+        allow_credentials: true,
+        ..Default::default()
+    }
+    .to_cors()
+    .expect("error while building CORS")
 }
 
-    
-// }
-//     // We now know that the array has exactly 2 unknowns and 3 knowns
-//     //There's probably a better way of doing this, but going to match all 10 possible scenarios for now
-//     let outputs = match unknowns {
-//         //Scenario 1 -Missing initial_rate and final_rate
-//         [1,1,0,0,0] => decline_calc::missing_qi_qf(inputs),
-//         // Scenario 2 -Missing initial_rate and decline_rate
-//         // [1,0,1,0,0]=> println!("false"),
-//         // //Scenario 3 - Missing initial_rate and duration
-//         // [1,0,0,1,0]=> println!("false"),
-//         // //Scenario 4 - Missing initial_rate and reserves
-//         // [1,0,0,0,1]=> println!("false"),
-//         // //Scenario 5 - Missing final_rate and decline_rate
-//         // [0,1,1,0,0]=> println!("false"),
-//         // //Scenario 6 - Missing final_rate and duration
-//         // [0,1,0,1,0]=> println!("false"),
-//         // //Scenario 7 - Missing final_rate and reserves
-//         // [0,1,0,0,1]=> println!("false"),
-//         // //Scenario 8 - Missing decline_rate and duration
-//         // [0,0,1,1,0]=> println!("false"),
-//         // //Scenario 9 - issing decline_rate and reserves
-//         // [0,0,1,0,1]=> println!("false"),
-//         // //Scenario 10 - Missing duration and reserves
-//         // [0,0,0,1,1]=> println!("false"),
-//         _ => panic!()
-//     };
-// println!("OUTPUTS");
-// println!("{:?}",outputs);
+#[get("/")]
 
- 
+fn index() -> io::Result<NamedFile> {
+    NamedFile::open("build/index.html")
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct ExponentialInput {
+    text: String,
+    symbol: String,
+    units: String,
+    calculate: bool,
+    input: Option<String>,
+}
+
+//Functions to extract data from incoming JSON
+
+pub fn createExponential(input: Json<Vec<ExponentialInput>>) -> Exponential<f32> {
+    //Initializing the array
+    let mut input_values: [ForecastParameter<f32>; 5] = [ForecastParameter::Unknown; 5];
+
+    for (i, item) in input.iter().enumerate() {
+        let val = match &item.input {
+            None => ForecastParameter::Unknown,
+            Some(x) => ForecastParameter::Known(x.trim().parse::<f32>().unwrap()),
+        };
+
+        input_values[i] = val;
+    }
+
+    let decline: Exponential<f32> = Exponential {
+        qi: input_values[0],
+        qf: input_values[1],
+        d: input_values[2],
+        duration: input_values[3],
+        reserves: input_values[4],
+    };
+
+    return decline;
+}
+
+#[post("/solve", format = "json", data = "<data>")]
+fn solve(data: Json<Vec<ExponentialInput>>) {
+    println!("{:?}", data);
+
+    //Create functions to parse incoming JSON
+
+    //Create Knowns array
+
+    let decline = createExponential(data);
+}
+
+#[get("/<file..>")]
+
+fn files(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("build/").join(file)).ok()
+}
+
+fn rocket() -> rocket::Rocket {
+    rocket::ignite()
+        .mount("/", routes![index, files, solve])
+        .attach(make_cors())
+}
+
+fn main() {
+    rocket().launch();
+}
