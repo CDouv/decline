@@ -29,12 +29,20 @@ pub struct Exponential<f32> {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct ExponentialInput {
+pub struct DeclineInput {
     pub text: String,
     pub symbol: String,
     pub units: String,
     pub calculate: bool,
-    pub input: Option<String>,
+    pub input: Option<f32>,
+}
+
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct DeclineSegment {
+    pub product: String,
+    pub segmentNumber: i32,
+    pub forecastType: String,
+    pub parameters: Vec<DeclineInput>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeclineParameters {

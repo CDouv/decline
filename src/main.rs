@@ -23,9 +23,10 @@ use rocket::response::NamedFile;
 
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions, Error};
 
+use crate::inputs::DeclineInput;
 use crate::inputs::DeclineParameters;
+use crate::inputs::DeclineSegment;
 use crate::inputs::Exponential;
-use crate::inputs::ExponentialInput;
 use crate::inputs::ForecastParameter;
 
 //Setting up CORS
@@ -59,14 +60,14 @@ fn index() -> io::Result<NamedFile> {
 
 //Functions to extract data from incoming JSON
 
-pub fn createExponential(input: Json<Vec<ExponentialInput>>) -> Exponential<f32> {
+pub fn createExponential(input: Json<DeclineSegment>) -> Exponential<f32> {
     //Initializing the array
     let mut input_values: [ForecastParameter<f32>; 5] = [ForecastParameter::Unknown; 5];
 
-    for (i, item) in input.iter().enumerate() {
+    for (i, item) in input.parameters.iter().enumerate() {
         let val = match &item.input {
             None => ForecastParameter::Unknown,
-            Some(x) => ForecastParameter::Known(x.trim().parse::<f32>().unwrap()),
+            Some(x) => ForecastParameter::Known(*x),
         };
 
         input_values[i] = val;
@@ -84,7 +85,7 @@ pub fn createExponential(input: Json<Vec<ExponentialInput>>) -> Exponential<f32>
 }
 
 #[post("/solve", format = "json", data = "<data>")]
-fn solve(data: Json<Vec<ExponentialInput>>) -> Json<DeclineParameters> {
+fn solve(data: Json<DeclineSegment>) -> Json<DeclineParameters> {
     println!("{:?}", data);
 
     //Create functions to parse incoming JSON
