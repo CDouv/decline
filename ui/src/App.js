@@ -65,19 +65,32 @@ const App = () => {
   const [inputCheck, setInputCheck] = useState([false]);
 
   const updateInputs = (arr) => {
-    //Copy segments, add in new parameters
+    //Copy original segments
+    let copySegments = segments.map((seg) => {
+      return { ...seg };
+    });
+
     let newSegments = segments.map((seg) => {
       return { ...seg };
     });
 
-    //TODO Come back to this, add looping functionality
-    let newParameters = segments[0].parameters.map((parameter, index) => {
-      return { ...parameter, input: arr[index] };
+    newSegments
+      .filter((seg) => countUnknowns(seg.segmentNumber)[0] === 3)
+      .map((seg, index) => {
+        seg.parameters.map((param, paramIndex) => {
+          param.input = arr[index].parameters[paramIndex];
+        });
+      });
+
+    // console.log("NEW SEGMENTS NEW SEGMENTS", newSegments);
+
+    newSegments.map((seg) => {
+      copySegments[seg.segmentNumber - 1] = seg;
     });
 
-    newSegments[0].parameters = newParameters;
-
-    return setSegments(newSegments);
+    console.log("newSegments:", JSON.stringify(newSegments));
+    console.log("segments:", JSON.stringify(segments));
+    return setSegments(copySegments);
   };
 
   const toggleChangeInput = (symbol, val, segmentNumber) => {
@@ -205,7 +218,7 @@ const App = () => {
 
     //Define new parameters, zero out the inputs
     let newParameters = newSegment.parameters.map((parameter) => {
-      return { ...parameter, input: undefined };
+      return { ...parameter, input: undefined, calculate: false };
     });
     //Set segmentNumber = prev obj segmentNumber + 1
     newSegment.segmentNumber = segments[segments.length - 1].segmentNumber + 1;
@@ -273,7 +286,7 @@ const App = () => {
     );
 
     // let jsonInput = JSON.stringify(segmentsCopy);
-    return segmentsCopy[0];
+    return segmentsCopy;
   };
 
   const sendJSON = async () => {
@@ -289,9 +302,10 @@ const App = () => {
 
     try {
       const resp = await axios.post(url, data, config);
-      console.log(resp.data);
+      console.log("RESPONSE", resp.data);
+      console.log("RESPONSE", JSON.stringify(resp.data));
 
-      updateInputs(resp.data.parameters);
+      updateInputs(resp.data);
     } catch (err) {
       console.error(err);
     }

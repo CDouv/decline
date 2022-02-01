@@ -60,7 +60,7 @@ fn index() -> io::Result<NamedFile> {
 
 //Functions to extract data from incoming JSON
 
-pub fn createExponential(input: Json<DeclineSegment>) -> Exponential<f32> {
+pub fn createExponential(input: &DeclineSegment) -> Exponential<f32> {
     //Initializing the array
     let mut input_values: [ForecastParameter<f32>; 5] = [ForecastParameter::Unknown; 5];
 
@@ -85,21 +85,24 @@ pub fn createExponential(input: Json<DeclineSegment>) -> Exponential<f32> {
 }
 
 #[post("/solve", format = "json", data = "<data>")]
-fn solve(data: Json<DeclineSegment>) -> Json<DeclineParameters> {
+fn solve(data: Json<Vec<DeclineSegment>>) -> Json<Vec<DeclineParameters>> {
     println!("{:?}", data);
+
+    //instantiate Vec of values
+    let mut decline_segments: Vec<DeclineParameters> = vec![];
 
     //Create functions to parse incoming JSON
 
-    //Create Knowns array
+    for parameters in data.iter() {
+        let mut decline = createExponential(parameters);
+        decline = decline.solve_unknowns();
 
-    let mut decline = createExponential(data);
-    decline = decline.solve_unknowns();
+        let decline_parameters = decline.extract_parameters();
 
-    let decline_parameters = Json(decline.extract_parameters());
+        decline_segments.push(decline_parameters);
+    }
 
-    println!("{:?}", decline_parameters.parameters);
-
-    decline_parameters
+    Json(decline_segments)
 }
 
 #[get("/<file..>")]
