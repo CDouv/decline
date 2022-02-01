@@ -88,8 +88,6 @@ const App = () => {
       copySegments[seg.segmentNumber - 1] = seg;
     });
 
-    console.log("newSegments:", JSON.stringify(newSegments));
-    console.log("segments:", JSON.stringify(segments));
     return setSegments(copySegments);
   };
 
@@ -281,17 +279,29 @@ const App = () => {
   };
 
   const exportParameters = () => {
-    let segmentsCopy = segments.filter(
-      (seg) => countUnknowns(seg.segmentNumber)[0] === 3
-    );
+    let segCopy = segments.map((seg) => {
+      return { ...seg };
+    });
+    segCopy.filter((seg) => countUnknowns(seg.segmentNumber)[0] === 3);
+
+    segCopy.map((seg) => {
+      return seg.parameters.map((param) => {
+        if (param.calculate === false) {
+          return { ...param, input: undefined };
+        } else {
+          return { ...param };
+        }
+      });
+    });
 
     // let jsonInput = JSON.stringify(segmentsCopy);
-    return segmentsCopy;
+    console.log("SEG COPY", segCopy);
+    return segCopy;
   };
 
   const sendJSON = async () => {
     let url = "http://localhost:8000/solve";
-    let data = exportParameters();
+    let data = await exportParameters();
     let config = {
       headers: {
         "Content-Type": "application/json",
@@ -302,8 +312,6 @@ const App = () => {
 
     try {
       const resp = await axios.post(url, data, config);
-      console.log("RESPONSE", resp.data);
-      console.log("RESPONSE", JSON.stringify(resp.data));
 
       updateInputs(resp.data);
     } catch (err) {
