@@ -1,6 +1,7 @@
 import Header from "./components/Header";
 import Parameters from "./components/Parameters";
 import Calculate from "./components/Calculate";
+import Debug from "./components/Debug";
 import AddSegment from "./components/AddSegment";
 import DeleteSegment from "./components/DeleteSegment";
 
@@ -278,36 +279,43 @@ const App = () => {
     return [knownsCount, unknownsCount];
   };
 
+  //Goal of the function: take segments state and:
+  //1. Filter out any segments that don't satisfy conditions to be solved
+  //2. For applicable segments, clear out inputs for any paramater where param.calculate === false
   const exportParameters = () => {
-    let segCopy = segments.map((seg) => {
-      return { ...seg };
-    });
-    segCopy.filter((seg) => countUnknowns(seg.segmentNumber)[0] === 3);
+    //Pulling out just the segments that satisfy conditions to be solved
+    let segCopy = segments.filter(
+      (seg) => countUnknowns(seg.segmentNumber)[0] === 3
+    );
 
-    segCopy.map((seg) => {
-      return seg.parameters.map((param) => {
+    segCopy = segCopy.map((seg) => {
+      let newParameters = seg.parameters.map((param) => {
         if (param.calculate === false) {
           return { ...param, input: undefined };
         } else {
           return { ...param };
         }
       });
+      let newSeg = { ...seg, parameters: newParameters };
+
+      return newSeg;
     });
 
-    // let jsonInput = JSON.stringify(segmentsCopy);
-    console.log("SEG COPY", segCopy);
+    console.log("segCopy", segCopy);
+
+    setSegments(segCopy);
     return segCopy;
   };
 
   const sendJSON = async () => {
     let url = "http://localhost:8000/solve";
-    let data = await exportParameters();
+    let data = exportParameters();
     let config = {
       headers: {
         "Content-Type": "application/json",
       },
     };
-    // console.log(data);
+    console.log("this is the data", data);
     data = JSON.stringify(data);
 
     try {
@@ -319,6 +327,7 @@ const App = () => {
     }
   };
 
+  console.log("rendering", segments);
   return (
     <div className="container">
       <Header title="Decline Calculator" />
@@ -351,6 +360,7 @@ const App = () => {
           exportParameters={exportParameters}
           sendJSON={sendJSON}
         />
+        <Debug exportParameters={exportParameters} />
       </div>
     </div>
   );
