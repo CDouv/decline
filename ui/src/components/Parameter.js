@@ -8,6 +8,7 @@ export const Parameter = ({
   changeInput,
   clearInput,
   segmentNumber,
+  segment,
   toggleUnits,
 }) => {
   //function to render input
@@ -32,9 +33,23 @@ export const Parameter = ({
   };
 
   return (
-    <div className="parameter">
+    <div
+      className={
+        (segment.forecastType === "exponential" && parameter.symbol === "df") ||
+        parameter.symbol === "b"
+          ? "disabledParameter"
+          : "parameter"
+      }
+    >
       <input
         type="checkbox"
+        disabled={
+          (segment.forecastType === "exponential" &&
+            parameter.symbol === "df") ||
+          parameter.symbol === "b"
+            ? true
+            : false
+        }
         onClick={() => {
           onToggle(parameter.symbol, segmentNumber);
         }}

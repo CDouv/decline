@@ -34,10 +34,17 @@ const App = () => {
           calculate: false,
           input: undefined,
         },
+        {
+          text: "Initial Decline Rate",
+          symbol: "di",
+          units: "nominal %/yr",
+          calculate: false,
+          input: undefined,
+        },
 
         {
-          text: "Decline Rate",
-          symbol: "d",
+          text: "Final Decline Rate",
+          symbol: "df",
           units: "nominal %/yr",
           calculate: false,
           input: undefined,
@@ -55,6 +62,13 @@ const App = () => {
           text: "Segment Reserves",
           symbol: "np",
           units: "mbbl",
+          calculate: false,
+          input: undefined,
+        },
+        {
+          text: "Decline Exponent",
+          symbol: "b",
+          units: "",
           calculate: false,
           input: undefined,
         },
@@ -150,7 +164,7 @@ const App = () => {
     //Copy parameter, change units and convert value
     let newParameters = params.map((parameter) => {
       if (parameter.symbol === symbol) {
-        if (parameter.symbol === "d") {
+        if (parameter.symbol === "di" || parameter.symbol === "df") {
           if (typeof parameter.input === "number") {
             switch (parameter.units) {
               case "nominal %/yr":
@@ -346,6 +360,7 @@ const App = () => {
               changeInput={toggleChangeInput}
               onToggle={toggleCalculate}
               segmentNumber={segments[index].segmentNumber}
+              segment={segments[index]}
               toggleUnits={toggleUnits}
               countUnknowns={countUnknowns}
             />

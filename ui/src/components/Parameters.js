@@ -6,6 +6,7 @@ export const Parameters = ({
   changeInput,
   clearInput,
   segmentNumber,
+  segment,
   toggleUnits,
   countUnknowns,
 }) => {
@@ -21,6 +22,7 @@ export const Parameters = ({
           changeInput={changeInput}
           clearInput={clearInput}
           segmentNumber={segmentNumber}
+          segment={segment}
           toggleUnits={toggleUnits}
         />
       ))}
