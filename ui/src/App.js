@@ -4,6 +4,7 @@ import Calculate from "./components/Calculate";
 import Debug from "./components/Debug";
 import AddSegment from "./components/AddSegment";
 import DeleteSegment from "./components/DeleteSegment";
+import SegmentType from "./components/SegmentType";
 
 import "./App.css";
 import { useState } from "react";
@@ -13,6 +14,8 @@ import { isCompositeComponent } from "react-dom/test-utils";
 const axios = require("axios").default;
 
 const App = () => {
+  const [param, setParam] = useState("");
+  const [paramError, setParamError] = useState("false");
   const [segments, setSegments] = useState([
     {
       product: "oil",
@@ -341,7 +344,6 @@ const App = () => {
     }
   };
 
-  console.log("rendering", segments);
   return (
     <div className="container">
       <Header title="Decline Calculator" />
@@ -354,6 +356,11 @@ const App = () => {
                 : "segmentError"
             }`}
           >
+            <SegmentType
+              segmentNumber={segments[index].segmentNumber}
+              segments={segments}
+              setSegments={setSegments}
+            />
             <Parameters
               key={segments[index].segmentNumber}
               parameters={segments[index].parameters}

@@ -35,8 +35,8 @@ export const Parameter = ({
   return (
     <div
       className={
-        (segment.forecastType === "exponential" && parameter.symbol === "df") ||
-        parameter.symbol === "b"
+        segment.forecastType === "exponential" &&
+        (parameter.symbol === "df" || parameter.symbol === "b")
           ? "disabledParameter"
           : "parameter"
       }
@@ -44,9 +44,8 @@ export const Parameter = ({
       <input
         type="checkbox"
         disabled={
-          (segment.forecastType === "exponential" &&
-            parameter.symbol === "df") ||
-          parameter.symbol === "b"
+          segment.forecastType === "exponential" &&
+          (parameter.symbol === "df" || parameter.symbol === "b")
             ? true
             : false
         }
