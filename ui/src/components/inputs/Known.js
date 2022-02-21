@@ -20,9 +20,10 @@ export const Known = ({ parameter, segmentNumber, changeInput }) => {
     <div className={`${paramError === "true" ? "inputErr" : "input"}`}>
       <form>
         <input
-          type="text"
+          type="number"
           value={parameter.input}
           onChange={(e) => {
+            console.log(e.target.value);
             validateParam(e.target.value);
             setParam(e.target.value);
             changeInput(parameter.symbol, e.target.value, segmentNumber);

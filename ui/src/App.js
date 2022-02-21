@@ -93,14 +93,18 @@ const App = () => {
     });
 
     newSegments
-      .filter((seg) => countUnknowns(seg.segmentNumber)[0] === 3)
+      .filter(
+        (seg) =>
+          (countUnknowns(seg.segmentNumber)[0] === 3 &&
+            seg.forecastType === "exponential") ||
+          (countUnknowns(seg.segmentNumber)[0] === 4 &&
+            seg.forecastType === "hyperbolic")
+      )
       .map((seg, index) => {
         seg.parameters.map((param, paramIndex) => {
           param.input = arr[index].parameters[paramIndex];
         });
       });
-
-    // console.log("NEW SEGMENTS NEW SEGMENTS", newSegments);
 
     newSegments.map((seg) => {
       copySegments[seg.segmentNumber - 1] = seg;
@@ -120,7 +124,7 @@ const App = () => {
         if (isNaN(val.trim()) || val.trim().length === 0) {
           return { ...parameter, input: val };
         } else {
-          return { ...parameter, input: parseInt(val) };
+          return { ...parameter, input: parseFloat(val) };
         }
       } else {
         return parameter;
@@ -135,7 +139,29 @@ const App = () => {
 
     return setSegments(newSegments);
   };
+  const changeSegmentType = (segmentNumber, selectedSegmentType) => {
+    let segCopy = segments.map((seg) => {
+      return { ...seg };
+    });
 
+    segCopy = segCopy.map((seg) => {
+      if (seg.segmentNumber === segmentNumber) {
+        let newParameters = seg.parameters.map((param) => {
+          return { ...param, input: "" };
+        });
+        let newSegment = {
+          ...seg,
+          forecastType: selectedSegmentType,
+          parameters: newParameters,
+        };
+
+        return newSegment;
+      } else {
+        return seg;
+      }
+    });
+    return setSegments(segCopy);
+  };
   const toggleCalculate = (symbol, segmentNumber) => {
     //Determine parameters to reference
     let params = segments[segmentNumber - 1].parameters;
@@ -191,7 +217,6 @@ const App = () => {
             switch (parameter.units) {
               case "years":
                 let newDaysInput = parameter.input * 365;
-                console.log("new days", newDaysInput);
                 return { ...parameter, units: "days", input: newDaysInput };
               case "days":
                 let newYearsInput = parameter.input / 365;
@@ -200,8 +225,6 @@ const App = () => {
           } else {
             switch (parameter.units) {
               case "years":
-                console.log("this one");
-                console.log(typeof parameter.input);
                 return { ...parameter, units: "days" };
               case "days":
                 return { ...parameter, units: "years" };
@@ -302,7 +325,11 @@ const App = () => {
   const exportParameters = () => {
     //Pulling out just the segments that satisfy conditions to be solved
     let segCopy = segments.filter(
-      (seg) => countUnknowns(seg.segmentNumber)[0] === 3
+      (seg) =>
+        (countUnknowns(seg.segmentNumber)[0] === 3 &&
+          seg.forecastType === "exponential") ||
+        (countUnknowns(seg.segmentNumber)[0] === 4 &&
+          seg.forecastType === "hyperbolic")
     );
 
     segCopy = segCopy.map((seg) => {
@@ -317,8 +344,6 @@ const App = () => {
 
       return newSeg;
     });
-
-    console.log("segCopy", segCopy);
 
     setSegments(segCopy);
     return segCopy;
@@ -337,7 +362,7 @@ const App = () => {
 
     try {
       const resp = await axios.post(url, data, config);
-
+      console.log("RETURN DATA", resp.data);
       updateInputs(resp.data);
     } catch (err) {
       console.error(err);
@@ -357,9 +382,8 @@ const App = () => {
             }`}
           >
             <SegmentType
+              changeSegmentType={changeSegmentType}
               segmentNumber={segments[index].segmentNumber}
-              segments={segments}
-              setSegments={setSegments}
             />
             <Parameters
               key={segments[index].segmentNumber}

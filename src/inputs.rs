@@ -15,7 +15,7 @@ impl ForecastParameter<f32> {
     pub fn extract_value(&self) -> f32 {
         match *self {
             ForecastParameter::Known(x) => x,
-            Unknown => panic!("{:?}", *self),
+            ForecastParameter::Unknown => panic!("{:?}", *self),
         }
     }
 }
@@ -50,7 +50,7 @@ pub enum DeclineType {
 
 pub fn createExponential(input: &DeclineSegment) -> Exponential<f32> {
     //Initializing the array
-    let mut input_values: [ForecastParameter<f32>; 5] = [ForecastParameter::Unknown; 5];
+    let mut input_values: [ForecastParameter<f32>; 7] = [ForecastParameter::Unknown; 7];
 
     for (i, item) in input.parameters.iter().enumerate() {
         let val = match &item.input {
@@ -63,12 +63,15 @@ pub fn createExponential(input: &DeclineSegment) -> Exponential<f32> {
 
     let decline: Exponential<f32> = Exponential {
         qi: input_values[0],
-        qf: input_values[1],
-        d: input_values[2],
-        duration: input_values[3],
-        reserves: input_values[4],
+        q: input_values[1],
+        di: input_values[2],
+        d: input_values[3],
+        t: input_values[4],
+        np: input_values[5],
+        b: input_values[6],
     };
 
+    println!("This is the decline:\n{:?}", decline);
     return decline;
 }
 

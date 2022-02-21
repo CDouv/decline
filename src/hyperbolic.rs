@@ -70,12 +70,12 @@ impl Hyperbolic<f32> {
 //Single variable functions
 impl Hyperbolic<f32> {
     pub fn solve_q(mut self) -> Self {
-        let qi = self.qi.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
         let b = self.b.extract_value();
         let di = self.di.extract_value();
         let t = self.t.extract_value();
 
-        let q = (qi / ((1.0 + b * di * t).powf(1.0 / b)));
+        let q = (qi / ((1.0 + b * di * t).powf(1.0 / b))) / 365.25;
 
         self.q = ForecastParameter::Known(q);
 
@@ -83,21 +83,22 @@ impl Hyperbolic<f32> {
     }
 
     pub fn solve_di_1(mut self) -> Self {
-        let qi = self.qi.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
         let b = self.b.extract_value();
-        let q = self.q.extract_value();
-        let np = self.np.extract_value();
+        let q = self.q.extract_value() * 365.25;
+        let np = self.np.extract_value() * 1000.0;
 
         let di = ((qi.powf(b)) * ((q.powf(1.0 - b)) - (qi.powf(1.0 - b)))) / ((b - 1.0) * np);
 
+        println!("di {:?}", di);
         self.di = ForecastParameter::Known(di);
-
+        println!("self.di {:?}", self.di);
         self
     }
 
     pub fn solve_di_2(mut self) -> Self {
-        let qi = self.qi.extract_value();
-        let q = self.q.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
+        let q = self.q.extract_value() * 365.25;
         let b = self.b.extract_value();
         let t = self.t.extract_value();
 
@@ -109,8 +110,8 @@ impl Hyperbolic<f32> {
     }
 
     pub fn solve_di_3(mut self) -> Self {
-        let qi = self.qi.extract_value();
-        let q = self.q.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
+        let q = self.q.extract_value() * 365.25;
         let b = self.b.extract_value();
         let d = self.d.extract_value();
 
@@ -134,12 +135,13 @@ impl Hyperbolic<f32> {
     }
 
     pub fn solve_np(mut self) -> Self {
-        let qi = self.qi.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
         let b = self.b.extract_value();
         let di = self.di.extract_value();
-        let q = self.q.extract_value();
+        let q = self.q.extract_value() * 365.25;
 
-        let np = (((qi.powf(b)) / ((b - 1.0) * di)) * (q.powf(1.0 - b) - qi.powf(1.0 - b)));
+        let np =
+            (((qi.powf(b)) / ((b - 1.0) * di)) * (q.powf(1.0 - b) - qi.powf(1.0 - b))) / 1000.0;
 
         self.np = ForecastParameter::Known(np);
 
@@ -159,8 +161,8 @@ impl Hyperbolic<f32> {
     }
 
     pub fn solve_t_2(mut self) -> Self {
-        let qi = self.qi.extract_value();
-        let q = self.q.extract_value();
+        let qi = self.qi.extract_value() * 365.25;
+        let q = self.q.extract_value() * 365.25;
         let b = self.b.extract_value();
         let di = self.di.extract_value();
 
@@ -187,62 +189,95 @@ impl Hyperbolic<f32> {
 //Set up functions to solve missing set of parameters
 impl Hyperbolic<f32> {
     pub fn solve_q_np_t(mut self) -> Self {
-        self.solve_t_1();
-        self.solve_q();
-        self.solve_np();
+        self = self.solve_t_1();
+        self = self.solve_q();
+        self = self.solve_np();
 
         self
     }
 
     pub fn solve_t_di_d(mut self) -> Self {
-        self.solve_di_1();
-        self.solve_t_2();
-        self.solve_d();
+        self = self.solve_di_1();
+        self = self.solve_t_2();
+        self = self.solve_d();
 
         self
     }
 
     pub fn solve_np_di_d(mut self) -> Self {
-        self.solve_di_2();
-        self.solve_d();
-        self.solve_np();
+        self = self.solve_di_2();
+        self = self.solve_d();
+        self = self.solve_np();
 
         self
     }
 
     pub fn solve_np_t_d(mut self) -> Self {
-        self.solve_np();
-        self.solve_t_2();
-        self.solve_d();
+        self = self.solve_np();
+        self = self.solve_t_2();
+        self = self.solve_d();
 
         self
     }
 
     pub fn solve_np_t_di(mut self) -> Self {
-        self.solve_di_3();
-        self.solve_t_3();
-        self.solve_np();
+        self = self.solve_di_3();
+        self = self.solve_t_3();
+        self = self.solve_np();
 
         self
     }
 
     pub fn solve_q_np_d(mut self) -> Self {
-        self.solve_q();
-        self.solve_np();
-        self.solve_d();
+        self = self.solve_q();
+        self = self.solve_np();
+        self = self.solve_d();
 
         self
     }
 
     pub fn solve_unknowns(mut self) -> Self {
-        match self.check_unknowns() {
-            [0, 1, 0, 0, 1, 1, 0] => self.solve_q_np_t(),
-            [0, 0, 1, 1, 1, 0, 0] => self.solve_t_di_d(),
-            [0, 0, 1, 1, 0, 1, 0] => self.solve_np_di_d(),
-            [0, 0, 0, 1, 1, 1, 0] => self.solve_np_t_d(),
-            [0, 0, 1, 0, 1, 1, 0] => self.solve_np_t_di(),
-            [0, 1, 0, 1, 0, 1, 0] => self.solve_q_np_d(),
+        self = match self {
+            Self {
+                q: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => self.solve_q_np_t(),
+            Self {
+                t: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                d: ForecastParameter::Unknown,
+                ..
+            } => self.solve_t_di_d(),
+
+            Self {
+                np: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                d: ForecastParameter::Unknown,
+                ..
+            } => self.solve_np_di_d(),
+            Self {
+                np: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                d: ForecastParameter::Unknown,
+                ..
+            } => self.solve_np_t_d(),
+            Self {
+                np: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => self.solve_np_t_di(),
+            Self {
+                q: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                d: ForecastParameter::Unknown,
+                ..
+            } => self.solve_q_np_d(),
             _ => panic!(),
-        }
+        };
+
+        self
     }
 }

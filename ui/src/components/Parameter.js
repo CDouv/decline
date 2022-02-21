@@ -12,25 +12,25 @@ export const Parameter = ({
   toggleUnits,
 }) => {
   //function to render input
-  const renderInput = () => {
-    if (parameter.calculate) {
-      return (
-        <Known
-          parameter={parameter}
-          changeInput={changeInput}
-          segmentNumber={segmentNumber}
-        />
-      );
-    } else {
-      return (
-        <Unknown
-          parameter={parameter}
-          changeInput={changeInput}
-          clearInput={clearInput}
-        />
-      );
-    }
-  };
+  let renderInput = null;
+
+  if (parameter.calculate) {
+    renderInput = (
+      <Known
+        parameter={parameter}
+        changeInput={changeInput}
+        segmentNumber={segmentNumber}
+      />
+    );
+  } else {
+    renderInput = (
+      <Unknown
+        parameter={parameter}
+        changeInput={changeInput}
+        clearInput={clearInput}
+      />
+    );
+  }
 
   return (
     <div
@@ -55,9 +55,7 @@ export const Parameter = ({
       />
 
       <div className="symbol">{parameter.symbol}</div>
-
-      {renderInput()}
-
+      {renderInput}
       <div
         className="units"
         onClick={() => {

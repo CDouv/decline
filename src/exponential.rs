@@ -7,45 +7,49 @@ pub const E: f32 = 2.71828;
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub struct Exponential<f32> {
     pub qi: ForecastParameter<f32>,
-    pub qf: ForecastParameter<f32>,
+    pub q: ForecastParameter<f32>,
+    pub di: ForecastParameter<f32>,
     pub d: ForecastParameter<f32>,
-    pub duration: ForecastParameter<f32>,
-    pub reserves: ForecastParameter<f32>,
+    pub t: ForecastParameter<f32>,
+    pub np: ForecastParameter<f32>,
+    pub b: ForecastParameter<f32>,
 }
 
 impl Exponential<f32> {
-    pub fn to_array(&self) -> [ForecastParameter<f32>; 5] {
-        let mut arr: [ForecastParameter<f32>; 5] = [ForecastParameter::Unknown; 5];
+    pub fn to_array(&self) -> [ForecastParameter<f32>; 7] {
+        let mut arr: [ForecastParameter<f32>; 7] = [ForecastParameter::Unknown; 7];
 
         arr[0] = *&self.qi;
-        arr[1] = *&self.qf;
-        arr[2] = *&self.d;
-        arr[3] = *&self.duration;
-        arr[4] = *&self.reserves;
+        arr[1] = *&self.q;
+        arr[2] = *&self.di;
+        arr[3] = *&self.d;
+        arr[4] = *&self.t;
+        arr[5] = *&self.np;
+        arr[6] = *&self.b;
 
         arr
     }
 
-    pub fn check_unknowns(&self) -> [i32; 5] {
-        let arr = &self.to_array();
+    // pub fn check_unknowns(&self) -> [i32; 5] {
+    //     let arr = &self.to_array();
 
-        let mut knowns: [i32; 5] = [0; 5];
+    //     let mut knowns: [i32; 5] = [0; 5];
 
-        for (i, parameter) in arr.iter().enumerate() {
-            // println!("check array");
-            // println!("{:?}",arr);
-            match parameter {
-                ForecastParameter::Known(f32) => knowns[i] = 0,
-                ForecastParameter::Unknown => knowns[i] = 1,
-            }
-        }
+    //     for (i, parameter) in arr.iter().enumerate() {
+    //         // println!("check array");
+    //         // println!("{:?}",arr);
+    //         match parameter {
+    //             ForecastParameter::Known(f32) => knowns[i] = 0,
+    //             ForecastParameter::Unknown => knowns[i] = 1,
+    //         }
+    //     }
 
-        knowns
-    }
+    //     knowns
+    // }
 
     pub fn extract_parameters(&self) -> DeclineParameters {
         let arr = self.to_array();
-        let mut params = vec![0.0; 5];
+        let mut params = vec![0.0; 7];
 
         for (i, param) in arr.iter().enumerate() {
             params[i] = param.extract_value();
@@ -62,168 +66,167 @@ impl Exponential<f32> {
 impl Exponential<f32> {
     //Solve for qi
     pub fn solve_qi(mut self) -> Self {
-        let qf = self.qf.extract_value();
-        let d = self.d.extract_value();
-        let duration = self.duration.extract_value();
+        let q = self.q.extract_value();
+        let di = self.di.extract_value();
+        let t = self.t.extract_value();
 
-        let qi = qf * E.powf(d * duration);
+        let qi = q * E.powf(di * t);
 
         self.qi = ForecastParameter::Known(qi);
 
         self
     }
 
-    //Solve for qf
-    pub fn solve_qf(mut self) -> Self {
+    //Solve for q
+    pub fn solve_q(mut self) -> Self {
         let qi = self.qi.extract_value();
-        let d = self.d.extract_value();
-        let duration = self.duration.extract_value();
 
-        let qf = qi / (E.powf(d * duration));
+        let di = self.di.extract_value();
 
-        self.qf = ForecastParameter::Known(qf);
+        let t = self.t.extract_value();
+
+        let q = qi / (E.powf(di * t));
+
+        self.q = ForecastParameter::Known(q);
 
         self
     }
 
     //Solve for decline rate
-    pub fn solve_decline(mut self) -> Self {
+    pub fn solve_di(mut self) -> Self {
         let qi = self.qi.extract_value();
-        let qf = self.qf.extract_value();
-        let duration = self.duration.extract_value();
+        let q = self.q.extract_value();
+        let t = self.t.extract_value();
 
-        let d = -((qf / qi).ln() / duration);
-        self.d = ForecastParameter::Known(d);
+        let di = -((q / qi).ln() / t);
+
+        self.di = ForecastParameter::Known(di);
 
         self
     }
 
-    //Solve for duration
-    pub fn solve_duration(mut self) -> Self {
+    //Solve for t
+    pub fn solve_t(mut self) -> Self {
         let qi = self.qi.extract_value();
-        let qf = self.qf.extract_value();
-        let d = self.d.extract_value();
+        let q = self.q.extract_value();
+        let di = self.di.extract_value();
 
-        let duration = -((qf / qi).ln() / d);
-        self.duration = ForecastParameter::Known(duration);
+        let t = -((q / qi).ln() / di);
+        self.t = ForecastParameter::Known(t);
 
         self
     }
 
-    //Solve for reserves
-    pub fn solve_reserves(mut self) -> Self {
+    //Solve for np
+    pub fn solve_np(mut self) -> Self {
         let qi = self.qi.extract_value();
-        let qf = self.qf.extract_value();
-        let d = self.d.extract_value();
+        let q = self.q.extract_value();
+        let di = self.di.extract_value();
 
-        let reserves = (qi - qf) / d;
-        self.reserves = ForecastParameter::Known(reserves);
+        let np = (qi - q) / di;
+        self.np = ForecastParameter::Known(np);
 
         self
     }
 }
 //Substitutation equations used for bisection
 impl Exponential<f32> {
-    pub fn missing_qi_qf(&self, qf_guess: f32) -> f32 {
-        let d = &self.d.extract_value();
-        let duration = &self.duration.extract_value();
-        let reserves = &self.reserves.extract_value();
+    pub fn missing_qi_q(&self, q_guess: f32) -> f32 {
+        let di = &self.di.extract_value();
+        let t = &self.t.extract_value();
+        let np = &self.np.extract_value();
 
         //setting equation = 0 with qf as only unknown
-        let result =
-            qf_guess * 365.25 * E.powf(d * duration) - reserves * 1000.0 * d - qf_guess * 365.25;
+        let result = q_guess * 365.25 * E.powf(di * t) - np * 1000.0 * di - q_guess * 365.25;
 
         result
     }
 
-    pub fn missing_qi_d(&self, d_guess: f32) -> f32 {
-        let qf = &self.qf.extract_value();
-        let duration = &self.duration.extract_value();
-        let reserves = &self.reserves.extract_value();
+    pub fn missing_qi_di(&self, di_guess: f32) -> f32 {
+        let q = &self.q.extract_value();
+        let t = &self.t.extract_value();
+        let np = &self.np.extract_value();
 
         //setting equation = 0 with decline as the only unknown
-        let result =
-            d_guess * reserves * 1000.0 - qf * E.powf(d_guess * duration) * 365.25 + qf * 365.25;
+        let result = di_guess * np * 1000.0 - q * E.powf(di_guess * t) * 365.25 + q * 365.25;
 
         result
     }
 
-    pub fn missing_qi_duration(&self, duration_guess: f32) -> f32 {
-        let qf = &self.qf.extract_value();
-        let d = &self.d.extract_value();
-        let reserves = &self.reserves.extract_value();
+    pub fn missing_qi_t(&self, t_guess: f32) -> f32 {
+        let q = &self.q.extract_value();
+        let di = &self.di.extract_value();
+        let np = &self.np.extract_value();
 
-        //setting equation = 0 with duration as the only unknown
-        let result =
-            d * duration_guess + ((qf * 365.25) / (reserves * 1000.0 * d + qf * 365.25)).ln();
-
-        result
-    }
-
-    pub fn missing_qi_reserves(&self, reserves_guess: f32) -> f32 {
-        let qf = &self.qf.extract_value();
-        let d = &self.d.extract_value();
-        let duration = &self.duration.extract_value();
-
-        //setting equation = 0 with duration as the only unknown
-        let result = reserves_guess * 1000.0 * d - qf * 365.25 * E.powf(d * duration) + qf * 365.25;
+        //setting equation = 0 with t as the only unknown
+        let result = di * t_guess + ((q * 365.25) / (np * 1000.0 * di + q * 365.25)).ln();
 
         result
     }
 
-    pub fn missing_qf_d(&self, d_guess: f32) -> f32 {
+    pub fn missing_qi_np(&self, np_guess: f32) -> f32 {
+        let q = &self.q.extract_value();
+        let di = &self.di.extract_value();
+        let t = &self.t.extract_value();
+
+        //setting equation = 0 with t as the only unknown
+        let result = np_guess * 1000.0 * di - q * 365.25 * E.powf(di * t) + q * 365.25;
+
+        result
+    }
+
+    pub fn missing_q_di(&self, di_guess: f32) -> f32 {
         let qi = &self.qi.extract_value();
-        let duration = &self.duration.extract_value();
-        let reserves = &self.reserves.extract_value();
+        let t = &self.t.extract_value();
+        let np = &self.np.extract_value();
 
-        //setting equation = 0 with duration as the only unknown
-        let result =
-            d_guess * reserves * 1000.0 - qi * 365.25 + qi * 365.25 * E.powf(-d_guess * duration);
+        //setting equation = 0 with t as the only unknown
+        let result = di_guess * np * 1000.0 - qi * 365.25 + qi * 365.25 * E.powf(-di_guess * t);
+
+        println!("This is the result");
+        result
+    }
+
+    pub fn missing_q_t(&self, t_guess: f32) -> f32 {
+        let qi = &self.qi.extract_value();
+        let di = &self.di.extract_value();
+        let np = &self.np.extract_value();
+
+        //setting equation = 0 with t as the only unknown
+        let result = di * t_guess + (qi * 365.25 * E.powf(di * t_guess) / (qi * 365.25));
 
         result
     }
 
-    pub fn missing_qf_duration(&self, duration_guess: f32) -> f32 {
+    pub fn missing_q_np(&self, np_guess: f32) -> f32 {
         let qi = &self.qi.extract_value();
-        let d = &self.d.extract_value();
-        let reserves = &self.reserves.extract_value();
+        let di = &self.di.extract_value();
+        let t = &self.t.extract_value();
 
-        //setting equation = 0 with duration as the only unknown
-        let result =
-            d * duration_guess + (qi * 365.25 * E.powf(d * duration_guess) / (qi * 365.25));
+        //setting equation = 0 with t as the only unknown
+        let result = di * np_guess * 1000.0 - qi * 365.25 + qi * 365.25 * E.powf(di * t);
 
         result
     }
 
-    pub fn missing_qf_reserves(&self, reserves_guess: f32) -> f32 {
+    pub fn missing_di_t(&self, t_guess: f32) -> f32 {
         let qi = &self.qi.extract_value();
-        let d = &self.d.extract_value();
-        let duration = &self.duration.extract_value();
+        let q = &self.q.extract_value();
+        let np = &self.np.extract_value();
 
-        //setting equation = 0 with duration as the only unknown
-        let result = d * reserves_guess * 1000.0 - qi * 365.25 + qi * 365.25 * E.powf(d * duration);
+        //setting equation = 0 with t as the only unknown
+        let result = 365.25 * (qi - q) * t_guess + (q / qi).ln() * np * 1000.0;
 
         result
     }
 
-    pub fn missing_d_duration(&self, duration_guess: f32) -> f32 {
+    pub fn missing_di_np(&self, np_guess: f32) -> f32 {
         let qi = &self.qi.extract_value();
-        let qf = &self.qf.extract_value();
-        let reserves = &self.reserves.extract_value();
+        let q = &self.q.extract_value();
+        let t = &self.t.extract_value();
 
-        //setting equation = 0 with duration as the only unknown
-        let result = 365.25 * (qi - qf) * duration_guess + (qf / qi).ln() * reserves * 1000.0;
-
-        result
-    }
-
-    pub fn missing_d_reserves(&self, reserves_guess: f32) -> f32 {
-        let qi = &self.qi.extract_value();
-        let qf = &self.qf.extract_value();
-        let duration = &self.duration.extract_value();
-
-        //setting equation = 0 with duration as the only unknown
-        let result = reserves_guess * 1000.0 * ((qf / qi).ln()) + duration * (qi - qf) * 365.25;
+        //setting equation = 0 with t as the only unknown
+        let result = np_guess * 1000.0 * ((q / qi).ln()) + t * (qi - q) * 365.25;
 
         result
     }
@@ -233,28 +236,68 @@ impl Exponential<f32> {
 
 impl Exponential<f32> {
     pub fn bisection(&self, bounds: (f32, f32)) -> f32 {
-        //Use match against check_unknowns to determine which substitution function to use
-        let f = match self.check_unknowns() {
+        //Use match against self to determine which substitution function to use
+        let f = match &self {
             // Scenario 1 -Missing initial_rate and final_rate
-            [1, 1, 0, 0, 0] => Exponential::missing_qi_qf,
+            Self {
+                qi: ForecastParameter::Unknown,
+                q: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_qi_q,
             // Scenario 2 -Missing initial_rate and decline_rate
-            [1, 0, 1, 0, 0] => Exponential::missing_qi_d,
-            // //Scenario 3 - Missing initial_rate and duration
-            [1, 0, 0, 1, 0] => Exponential::missing_qi_duration,
-            // //Scenario 4 - Missing initial_rate and reserves
-            [1, 0, 0, 0, 1] => Exponential::missing_qi_reserves,
+            Self {
+                qi: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_qi_di,
+            // //Scenario 3 - Missing initial_rate and t
+            Self {
+                qi: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_qi_t,
+            // //Scenario 4 - Missing initial_rate and np
+            Self {
+                qi: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_qi_np,
             // //Scenario 5 - Missing final_rate and decline_rate
-            [0, 1, 1, 0, 0] => Exponential::missing_qf_d,
-            // //Scenario 6 - Missing final_rate and duration
-            [0, 1, 0, 1, 0] => Exponential::missing_qf_duration,
-            // //Scenario 7 - Missing final_rate and reserves
-            [0, 1, 0, 0, 1] => Exponential::missing_qf_reserves,
-            // //Scenario 8 - Missing decline_rate and duration
-            [0, 0, 1, 1, 0] => Exponential::missing_d_duration,
-            // //Scenario 9 - issing decline_rate and reserves
-            [0, 0, 1, 0, 1] => Exponential::missing_d_reserves,
-            // //Scenario 10 - Missing duration and reserves
-            [0, 0, 0, 1, 1] => panic!("Missing duration and reserves function not implemented yet"),
+            Self {
+                q: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_q_di,
+            // //Scenario 6 - Missing final_rate and t
+            Self {
+                q: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_q_t,
+            // //Scenario 7 - Missing final_rate and np
+            Self {
+                q: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_q_np,
+            // //Scenario 8 - Missing decline_rate and t
+            Self {
+                di: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_di_t,
+            // //Scenario 9 - issing decline_rate and np
+            Self {
+                di: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => Exponential::missing_di_np,
+            // //Scenario 10 - Missing t and np
+            Self {
+                t: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => panic!("Missing t and np function not implemented yet"),
             _ => panic!(),
         };
 
@@ -317,64 +360,161 @@ impl Exponential<f32> {
     }
     pub fn solve_unknowns(mut self) -> Self {
         //Determine what bounds to use for bisection equation
-        let bounds: (f32, f32) = match self.check_unknowns() {
+        let bounds: (f32, f32) = match self {
             // Scenario 1 -Set bounds for qf
-            [1, 1, 0, 0, 0] => (0.0, 10000.0),
+            Self {
+                qi: ForecastParameter::Unknown,
+                q: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 10000.0),
             // Scenario 2 -Set bounds for decline
-            [1, 0, 1, 0, 0] => (0.01, 0.99),
-            // //Scenario 3 - Set bounds for duration
-            [1, 0, 0, 1, 0] => (0.0, 100.0),
-            // //Scenario 4 - Set bounds for reserves
-            [1, 0, 0, 0, 1] => (0.0, 100000.0),
+            Self {
+                qi: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => (0.01, 0.99),
+            // //Scenario 3 - Set bounds for t
+            Self {
+                qi: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100.0),
+            // //Scenario 4 - Set bounds for np
+            Self {
+                qi: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100000.0),
             // //Scenario 5 - Set bounds for decline
-            [0, 1, 1, 0, 0] => (0.01, 0.99),
-            // //Scenario 6 - Set bounds for duration
-            [0, 1, 0, 1, 0] => (0.0, 100.0),
-            // //Scenario 7 - Set bounds for reserves
-            [0, 1, 0, 0, 1] => (0.0, 100000.0),
-            // //Scenario 8 - Set bounds for duration
-            [0, 0, 1, 1, 0] => (0.0, 100.0),
-            // //Scenario 9 - Set bounds for reserves
-            [0, 0, 1, 0, 1] => (0.0, 100000.0),
+            Self {
+                q: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => (0.01, 0.99),
+            // //Scenario 6 - Set bounds for t
+            Self {
+                q: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100.0),
+            // //Scenario 7 - Set bounds for np
+            Self {
+                q: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100000.0),
+            // //Scenario 8 - Set bounds for t
+            Self {
+                di: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100.0),
+            // //Scenario 9 - Set bounds for np
+            Self {
+                di: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => (0.0, 100000.0),
             _ => panic!(),
         };
 
         //Solving unknown 1 using bisection
-        match self.check_unknowns() {
-            // Scenario 1 -Set bounds for qf
-            [1, 1, 0, 0, 0] => self.qf = ForecastParameter::Known(self.bisection(bounds)),
-            // Scenario 2 -Set bounds for decline
-            [1, 0, 1, 0, 0] => self.d = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 3 - Set bounds for duration
-            [1, 0, 0, 1, 0] => self.duration = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 4 - Set bounds for reserves
-            [1, 0, 0, 0, 1] => self.reserves = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 5 - Set bounds for decline
-            [0, 1, 1, 0, 0] => self.d = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 6 - Set bounds for duration
-            [0, 1, 0, 1, 0] => self.duration = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 7 - Set bounds for reserves
-            [0, 1, 0, 0, 1] => self.reserves = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 8 - Set bounds for duration
-            [0, 0, 1, 1, 0] => self.duration = ForecastParameter::Known(self.bisection(bounds)),
-            // //Scenario 9 - Set bounds for reserves
-            [0, 0, 1, 0, 1] => self.reserves = ForecastParameter::Known(self.bisection(bounds)),
+        match self {
+            // Scenario 1 - Missing qi, q -> Solve for q
+            Self {
+                qi: ForecastParameter::Unknown,
+                q: ForecastParameter::Unknown,
+                ..
+            } => self.q = ForecastParameter::Known(self.bisection(bounds)),
+            // Scenario 2 -Missing qi, did -> solve for di
+            Self {
+                qi: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => self.di = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 3 - Missing qi,t  -> solve for t
+            Self {
+                qi: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => self.t = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 4 - Missing qi, np -> solve for np
+            Self {
+                qi: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => self.np = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 5 - Missing q, di -> solve for di
+            Self {
+                q: ForecastParameter::Unknown,
+                di: ForecastParameter::Unknown,
+                ..
+            } => {
+                println!("test");
+                self.di = ForecastParameter::Known(self.bisection(bounds));
+                println!("After bisection {:?}", self);
+            }
+
+            // //Scenario 6 - Missing q, t -> solve for t
+            Self {
+                q: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => self.t = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 7 - Missing q, np -> solve for np
+            Self {
+                q: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => self.np = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 8 - Missing di, t -> solve for t
+            Self {
+                di: ForecastParameter::Unknown,
+                t: ForecastParameter::Unknown,
+                ..
+            } => self.t = ForecastParameter::Known(self.bisection(bounds)),
+            // //Scenario 9 - Missing di, np -> solve for np
+            Self {
+                di: ForecastParameter::Unknown,
+                np: ForecastParameter::Unknown,
+                ..
+            } => self.np = ForecastParameter::Known(self.bisection(bounds)),
             _ => panic!(),
         };
         //Solving unknown 2 using single unknown equations
-        self = match self.check_unknowns() {
+        self = match self {
             // Scenario 1 -Solve qi
-            [1, 0, 0, 0, 0] => self.solve_qi(),
-            // Scenario 2 -Solve qf
-            [0, 1, 0, 0, 0] => self.solve_qf(),
+            Self {
+                qi: ForecastParameter::Unknown,
+                ..
+            } => self.solve_qi(),
+            // Scenario 2 -Solve q
+            Self {
+                q: ForecastParameter::Unknown,
+                ..
+            } => self.solve_q(),
             // //Scenario 3 - Solve decline
-            [0, 0, 1, 0, 0] => self.solve_decline(),
-            // //Scenario 4 - Solve duration
-            [0, 0, 0, 1, 0] => self.solve_duration(),
-            // //Scenario 5 - Solve reserves
-            [0, 0, 0, 0, 1] => self.solve_reserves(),
-            _ => panic!("{:?}", self.check_unknowns()),
+            Self {
+                di: ForecastParameter::Unknown,
+                ..
+            } => self.solve_di(),
+            // //Scenario 4 - Solve t
+            Self {
+                t: ForecastParameter::Unknown,
+                ..
+            } => self.solve_t(),
+            // //Scenario 5 - Solve np
+            Self {
+                np: ForecastParameter::Unknown,
+                ..
+            } => self.solve_np(),
+            _ => panic!("{:?}", "Error solving unknown #2"),
         };
+
+        //set d = di and b = 0
+
+        self.d = ForecastParameter::Known(self.di.extract_value());
+        self.b = ForecastParameter::Known(0.0);
 
         self
     }
